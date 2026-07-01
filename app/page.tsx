@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
+import { AddUserForm } from '@/app/components/AddUserForm'
 
 export default async function Page() {
   const cookieStore = await cookies()
@@ -12,10 +13,13 @@ export default async function Page() {
   }
 
   return (
-    <ul>
-      {users?.map((user) => (
-        <li key={user.id}>{user.username ?? `${user.firstname} ${user.lastname}`}</li>
-      ))}
-    </ul>
+    <>
+      <ul>
+        {users?.map((user) => (
+          <li key={user.id}>{user.username ?? `${user.firstname} ${user.lastname}`}</li>
+        ))}
+      </ul>
+      <AddUserForm />
+    </>
   )
 }
