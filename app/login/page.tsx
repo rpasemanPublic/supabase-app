@@ -7,7 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -18,6 +18,23 @@ export default function LoginPage() {
     setError(null);
 
     const supabase = createClient();
+
+    let email = identifier;
+    if (!identifier.includes("@")) {
+      const { data, error: resolveError } = await supabase.functions.invoke(
+        "resolve-username",
+        { body: { username: identifier } },
+      );
+
+      if (resolveError) {
+        setSubmitting(false);
+        setError(resolveError.message);
+        return;
+      }
+
+      email = data.email;
+    }
+
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -38,10 +55,9 @@ export default function LoginPage() {
     <form onSubmit={handleSubmit}>
       <h1>Log in</h1>
       <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email or username"
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
         required
       />
       <input
