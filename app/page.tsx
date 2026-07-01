@@ -17,13 +17,16 @@ export default async function Page() {
 
   const { data: profile } = await supabase
     .from("User")
-    .select("username")
+    .select("username, role")
     .eq("id", user.id)
     .single();
 
   return (
     <div>
-      <p>Hello {profile?.username ?? user.email}</p>
+      <p>
+        Hello {profile?.username ?? user.email}
+        {profile?.role === "admin" ? " (admin)" : ""}
+      </p>
       <LogoutButton />
     </div>
   );

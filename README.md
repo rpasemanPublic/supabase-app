@@ -34,6 +34,16 @@ Starts the dev server at [http://localhost:3000](http://localhost:3000). Edit `a
 
 This project has email confirmation enabled, so a new signup won't get a session immediately — the user has to click the confirmation link in their email before they can log in. Some domains (e.g. `example.com`) are rejected outright as known-fake addresses.
 
+### Roles
+
+Every profile row in `public."User"` has a `role` column (`'user'` by default, or `'admin'`). There's no self-service way to become an admin — no INSERT/UPDATE policy grants regular users write access to this table at all, so the only way in is a direct database update:
+
+```sql
+update public."User" set role = 'admin' where username = '<username>';
+```
+
+The home page shows `(admin)` next to the username when applicable, but nothing is currently gated behind the role — it's just the underlying infrastructure for now.
+
 Other scripts:
 
 ```bash
