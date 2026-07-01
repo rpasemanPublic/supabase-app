@@ -53,11 +53,18 @@ Do not run migrations directly against production outside of this flow — the G
 
 ## Edge functions (backend)
 
-Edge functions live in `supabase/functions/<name>/index.ts` and are deployed independently of migrations (not via git push — deploy explicitly):
+Edge functions live in `supabase/functions/<name>/index.ts` and, like migrations, deploy automatically via the GitHub integration on push to `master`.
 
-```bash
-npx supabase functions deploy <name> --project-ref xtthlulxezteqtpnznoz
+**The integration only deploys functions declared in `supabase/config.toml`** — it does not scan `supabase/functions/` on its own. So for each new function, add a block there in addition to the function's `index.ts`:
+
+```toml
+[functions.<name>]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/<name>/index.ts"
 ```
+
+Then push to `master`. Verify it deployed by checking the function's version bumped (ask Claude to check via the Supabase MCP `get_edge_function` tool, or check the dashboard).
 
 They run with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` available as env vars automatically, so they can bypass RLS when needed — keep the service role key out of the frontend entirely. Frontend code calls them with `supabase.functions.invoke("<name>", { body: {...} })`. Remember to handle CORS (`OPTIONS` requests) in the function, since the browser will preflight cross-origin calls to `*.supabase.co`.
 
