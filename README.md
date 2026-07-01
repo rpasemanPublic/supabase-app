@@ -26,6 +26,14 @@ npm run dev
 
 Starts the dev server at [http://localhost:3000](http://localhost:3000). Edit `app/page.tsx` and it hot-reloads.
 
+## Auth
+
+- `/signup` — create an account with email, username, and password. `username` is stored via `raw_user_meta_data` and copied into `public."User"` (the profile table) by a `handle_new_user` trigger on `auth.users`.
+- `/login` — email + password login.
+- `/` — protected; redirects to `/login` if not authenticated, otherwise shows "Hello `<username>`" and a log out button.
+
+This project has email confirmation enabled, so a new signup won't get a session immediately — the user has to click the confirmation link in their email before they can log in. Some domains (e.g. `example.com`) are rejected outright as known-fake addresses.
+
 Other scripts:
 
 ```bash
