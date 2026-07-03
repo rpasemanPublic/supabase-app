@@ -29,7 +29,7 @@ Starts the dev server at [http://localhost:3000](http://localhost:3000). Edit `a
 ## Auth
 
 - `/signup` — create an account with email, username, and password. `username` is stored via `raw_user_meta_data` and copied into `public."User"` (the profile table) by a `handle_new_user` trigger on `auth.users`.
-- `/login` — email *or username* + password login. A username is resolved to its email via the `resolve-username` edge function (service role only — the client can't read `auth.users` directly). To avoid leaking which usernames exist, the function always returns an email (a bogus one if the username doesn't exist), so a bad username fails login the same way a bad password would.
+- `/login` — email _or username_ + password login. A username is resolved to its email via the `resolve-username` edge function (service role only — the client can't read `auth.users` directly). To avoid leaking which usernames exist, the function always returns an email (a bogus one if the username doesn't exist), so a bad username fails login the same way a bad password would.
 - `/` — protected; redirects to `/login` if not authenticated, otherwise shows "Hello `<username>`" and a log out button.
 
 This project has email confirmation enabled, so a new signup won't get a session immediately — the user has to click the confirmation link in their email before they can log in. Some domains (e.g. `example.com`) are rejected outright as known-fake addresses.
