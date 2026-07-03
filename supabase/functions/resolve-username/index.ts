@@ -34,27 +34,11 @@ Deno.serve(async (req: Request) => {
 
   const { data: profile } = await supabase
     .from("User")
-    .select("id")
+    .select("email")
     .eq("username", username)
     .single();
 
-  if (!profile) {
-    return new Response(JSON.stringify({ email: NO_SUCH_USER_EMAIL }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const { data: userData, error } = await supabase.auth.admin.getUserById(profile.id);
-
-  if (error || !userData.user.email) {
-    return new Response(JSON.stringify({ email: NO_SUCH_USER_EMAIL }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  return new Response(JSON.stringify({ email: userData.user.email }), {
+  return new Response(JSON.stringify({ email: profile?.email ?? NO_SUCH_USER_EMAIL }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
