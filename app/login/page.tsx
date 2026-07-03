@@ -25,10 +25,9 @@ export default function LoginPage() {
 
     let email = identifier;
     if (!identifier.includes("@")) {
-      const { data, error: resolveError } = await supabase.functions.invoke(
-        "resolve-username",
-        { body: { username: identifier } },
-      );
+      const { data, error: resolveError } = await supabase.functions.invoke("resolve-username", {
+        body: { username: identifier },
+      });
 
       if (resolveError) {
         setSubmitting(false);
