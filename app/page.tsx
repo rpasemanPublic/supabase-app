@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { LogoutButton } from "@/app/components/LogoutButton";
 
@@ -35,6 +36,12 @@ export default async function Page() {
             </span>
           )}
         </p>
+        <Link
+          href="/programs"
+          className="w-full rounded-lg bg-accent px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-accent-hover"
+        >
+          Programs
+        </Link>
         <LogoutButton />
       </div>
     </main>
