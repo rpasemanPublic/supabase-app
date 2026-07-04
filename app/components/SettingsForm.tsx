@@ -16,10 +16,13 @@ type Props = {
   initialWeightKg: number | null;
   initialHeightCm: number | null;
   initialUnitPreference: string;
+  initialGender: string;
 };
 
 const inputClasses =
   "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
+
+const GENDER_PRESETS = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 function formatWeightText(weightKg: number | null, unitPreference: string): string {
   if (weightKg == null) return "";
@@ -50,10 +53,19 @@ export function SettingsForm({
   initialWeightKg,
   initialHeightCm,
   initialUnitPreference,
+  initialGender,
 }: Props) {
   const router = useRouter();
   const [username, setUsername] = useState(initialUsername);
   const [unitPreference, setUnitPreference] = useState(initialUnitPreference);
+
+  const initialIsPreset = GENDER_PRESETS.includes(initialGender) || initialGender === "";
+  const [genderPreset, setGenderPreset] = useState(
+    initialIsPreset ? initialGender : "custom",
+  );
+  const [customGenderText, setCustomGenderText] = useState(
+    initialIsPreset ? "" : initialGender,
+  );
 
   // Raw text the user is typing -- never reformatted mid-edit, only ever
   // (re)initialized from the canonical value when the unit changes.
@@ -68,6 +80,8 @@ export function SettingsForm({
   const [submitting, setSubmitting] = useState(false);
 
   const isImperial = unitPreference === "imperial";
+
+  const getGender = (): string => (genderPreset === "custom" ? customGenderText : genderPreset);
 
   const getWeightKg = (): number | null => {
     if (weightText === "") return null;
@@ -106,6 +120,7 @@ export function SettingsForm({
   const isDirty =
     username !== initialUsername ||
     unitPreference !== initialUnitPreference ||
+    getGender() !== initialGender ||
     !numbersEqual(getWeightKg(), initialWeightKg) ||
     !numbersEqual(getHeightCm(), initialHeightCm);
 
@@ -122,6 +137,7 @@ export function SettingsForm({
         weight_kg: getWeightKg(),
         height_cm: getHeightCm(),
         unit_preference: unitPreference,
+        gender: getGender(),
       })
       .eq("id", userId);
 
@@ -148,6 +164,34 @@ export function SettingsForm({
           onChange={(e) => setUsername(e.target.value)}
           required
         />
+
+        <label htmlFor="gender" className="text-sm text-gray-700">
+          Gender
+        </label>
+        <div className="flex flex-col gap-2">
+          <select
+            id="gender"
+            className={inputClasses}
+            value={genderPreset}
+            onChange={(e) => setGenderPreset(e.target.value)}
+          >
+            <option value="">Not set</option>
+            {GENDER_PRESETS.map((preset) => (
+              <option key={preset} value={preset}>
+                {preset}
+              </option>
+            ))}
+            <option value="custom">Custom</option>
+          </select>
+          {genderPreset === "custom" && (
+            <input
+              className={inputClasses}
+              value={customGenderText}
+              onChange={(e) => setCustomGenderText(e.target.value)}
+              placeholder="Enter your own"
+            />
+          )}
+        </div>
 
         <label htmlFor="weight" className="text-sm text-gray-700">
           Weight ({isImperial ? "lbs" : "kg"})
