@@ -55,7 +55,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthCard title="Log in">
+    <AuthCard>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           className={inputClasses}
