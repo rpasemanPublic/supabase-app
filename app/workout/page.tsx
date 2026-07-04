@@ -4,6 +4,8 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { predictWeightKg } from "@/utils/predict_weight";
 import { kgToLb, floorToIncrement } from "@/utils/weight_transform";
+import { LogSetForm } from "@/app/components/LogSetForm";
+import { FinishWorkoutButton } from "@/app/components/FinishWorkoutButton";
 
 // Smallest plate increment lifters typically load per side, doubled: 5lb
 // plates are standard in imperial gyms, 2.5kg plates in metric ones.
@@ -26,6 +28,18 @@ type WorkoutQueryResult = {
       set_number: number;
       recommended_reps: number;
     }[];
+    // Made to-one at runtime by the unique constraint on
+    // recommended_workout_exercise_id (at most one actual_workout_exercise
+    // per recommended one) -- PostgREST returns null or a single object,
+    // not an array, once that constraint exists.
+    actual_workout_exercises: {
+      id: number;
+      actual_sets: {
+        set_number: number;
+        actual_reps: number;
+        actual_weight: number;
+      }[];
+    } | null;
   }[];
 };
 
@@ -61,6 +75,10 @@ export default async function WorkoutPage() {
           id,
           set_number,
           recommended_reps
+        ),
+        actual_workout_exercises (
+          id,
+          actual_sets ( set_number, actual_reps, actual_weight )
         )
       )
     `,
@@ -97,10 +115,14 @@ export default async function WorkoutPage() {
                   <h2 className="font-semibold text-gray-900">
                     {exercise.exercises?.name}
                   </h2>
-                  <ul className="mt-2 flex flex-col gap-1 text-sm text-gray-600">
+                  <ul className="mt-2 flex flex-col gap-2 text-sm text-gray-600">
                     {exercise.recommended_sets
                       .sort((a, b) => a.set_number - b.set_number)
                       .map((set) => {
+                        const actualSet = exercise.actual_workout_exercises?.actual_sets.find(
+                          (a) => a.set_number === set.set_number,
+                        );
+
                         const predictedWeightKg =
                           bodyWeightKg == null || exercise.exercises == null
                             ? null
@@ -129,19 +151,25 @@ export default async function WorkoutPage() {
                                 );
 
                         return (
-                          <li
-                            key={set.id}
-                            className="flex justify-between gap-4"
-                          >
-                            <span>Set {set.set_number}</span>
-                            <span className="whitespace-nowrap text-gray-400">
-                              {set.recommended_reps} reps
-                              {displayWeight != null
-                                ? isImperial
-                                  ? ` @ ${displayWeight.toFixed(0)}lbs`
-                                  : ` @ ${displayWeight.toFixed(1)}kg`
-                                : ""}
-                            </span>
+                          <li key={set.id} className="flex flex-col gap-1">
+                            <div className="flex justify-between gap-4">
+                              <span>Set {set.set_number}</span>
+                              <span className="whitespace-nowrap text-gray-400">
+                                {set.recommended_reps} reps
+                                {displayWeight != null
+                                  ? isImperial
+                                    ? ` @ ${displayWeight.toFixed(0)}lbs`
+                                    : ` @ ${displayWeight.toFixed(1)}kg`
+                                  : ""}
+                              </span>
+                            </div>
+                            <LogSetForm
+                              recommendedWorkoutExerciseId={exercise.id}
+                              setNumber={set.set_number}
+                              isImperial={isImperial}
+                              initialActualReps={actualSet?.actual_reps ?? null}
+                              initialActualWeightKg={actualSet?.actual_weight ?? null}
+                            />
                           </li>
                         );
                       })}
@@ -149,6 +177,7 @@ export default async function WorkoutPage() {
                 </div>
               ))}
             </div>
+            <FinishWorkoutButton workoutId={workout.id} />
           </>
         ) : (
           <p className="text-gray-600">No workout in progress.</p>
