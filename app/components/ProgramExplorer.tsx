@@ -4,7 +4,7 @@ import { useState } from "react";
 
 type Exercise = {
   id: number;
-  name: string;
+  exercises: { name: string } | null;
   recommended_sets: number;
   min_reps: number;
   max_reps: number;
@@ -50,7 +50,7 @@ export function ProgramExplorer({ programs }: { programs: Program[] }) {
             <ul className="mt-2 flex flex-col gap-1 text-sm text-gray-600">
               {workout.template_exercises.map((exercise) => (
                 <li key={exercise.id} className="flex justify-between gap-4">
-                  <span>{exercise.name}</span>
+                  <span>{exercise.exercises?.name}</span>
                   <span className="whitespace-nowrap text-gray-400">
                     {exercise.recommended_sets} x {exercise.min_reps}-{exercise.max_reps}
                   </span>
