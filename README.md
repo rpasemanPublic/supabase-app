@@ -26,6 +26,56 @@ npm run dev
 
 Starts the dev server at [http://localhost:3000](http://localhost:3000). Edit `app/page.tsx` and it hot-reloads.
 
+## Local development with Docker
+
+The Supabase CLI runs the full stack (Postgres, Auth, Studio, etc.) in Docker containers, so you can develop and test against a local database instead of the live project. Requires Docker Desktop running.
+
+```bash
+npx supabase start
+```
+
+First run pulls the Docker images and applies every migration in `supabase/migrations/` to a fresh local database; later runs just start the existing containers. Once it's up, print the local URLs and keys with:
+
+```bash
+npx supabase status
+```
+
+Point the app at the local project by swapping `.env.local` to the local values instead of the live project's:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<PUBLISHABLE_KEY from `supabase status`>
+```
+
+Then `npm run dev` as usual.
+
+Useful local URLs:
+
+- **Studio** (browse tables, run SQL, inspect auth users): http://127.0.0.1:54323
+- **Mailpit** (catches every email the app sends, e.g. signup confirmations, since there's no real SMTP locally): http://127.0.0.1:54324
+- **Postgres** directly: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`, or via Docker:
+  ```bash
+  docker exec supabase_db_SupabaseApp psql -U postgres -d postgres -c "select * from public.\"User\";"
+  ```
+
+**Always test a new migration locally before pushing** — apply it with:
+
+```bash
+npx supabase migration up
+```
+
+If a migration doesn't apply cleanly here, fix it before pushing — once it's pushed, the GitHub integration applies it to the live project, and there's no clean way to "unapply" a broken migration there. To start over from a clean local database (drops and recreates it, reapplying every migration from scratch):
+
+```bash
+npx supabase db reset
+```
+
+Stop the local stack with:
+
+```bash
+npx supabase stop
+```
+
 ## Auth
 
 - `/signup` — create an account with email, username, and password. `username` is stored via `raw_user_meta_data` and copied into `public."User"` (the profile table) by a `handle_new_user` trigger on `auth.users`.
