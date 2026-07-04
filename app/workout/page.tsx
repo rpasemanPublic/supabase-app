@@ -10,6 +10,25 @@ import { kgToLb, floorToIncrement } from "@/utils/weight_transform";
 const WEIGHT_INCREMENT_LB = 5;
 const WEIGHT_INCREMENT_KG = 2.5;
 
+// Without generated Database types, postgrest-js can't tell this is a
+// many-to-one embed (recommended_workout_exercises.exercise_id -> exercises.id)
+// and infers `exercises` as an array; .returns() overrides that with the
+// shape it actually returns at runtime -- a single object.
+type WorkoutQueryResult = {
+  id: number;
+  name: string;
+  created_at: string;
+  recommended_workout_exercises: {
+    id: number;
+    exercises: { name: string; exercise_ratio: number } | null;
+    recommended_sets: {
+      id: number;
+      set_number: number;
+      recommended_reps: number;
+    }[];
+  }[];
+};
+
 export default async function WorkoutPage() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
@@ -49,7 +68,8 @@ export default async function WorkoutPage() {
     .is("finished_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle()
+    .returns<WorkoutQueryResult>();
 
   const bodyWeightKg = profile?.weight_kg ?? null;
   const isImperial = profile?.unit_preference === "imperial";
