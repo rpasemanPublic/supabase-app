@@ -27,3 +27,7 @@ export function cmToFeetInches(cm: number): { feet: number; inches: number } {
 export function feetInchesToCm(feet: number, inches: number): number {
   return inToCm(feet * 12 + inches);
 }
+
+export function floorToIncrement(value: number, increment: number): number {
+  return Math.floor(value / increment) * increment;
+}
