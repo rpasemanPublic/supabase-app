@@ -6,6 +6,7 @@ import { LogoutButton } from "@/app/components/LogoutButton";
 import { HamburgerMenu } from "@/app/components/HamburgerMenu";
 import { SelectProgramDialog } from "@/app/components/SelectProgramDialog";
 import { StartWorkoutButton } from "@/app/components/StartWorkoutButton";
+import { Logo } from "@/app/components/Logo";
 
 export default async function Page() {
   const cookieStore = await cookies();
@@ -42,9 +43,13 @@ export default async function Page() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="relative flex w-full max-w-sm flex-col items-center gap-6 rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <div className="absolute right-4 top-4">
-          <HamburgerMenu />
+      <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <div className="grid w-full grid-cols-[2.25rem_1fr_2.25rem] items-center gap-2">
+          <div />
+          <Logo />
+          <div className="flex justify-end">
+            <HamburgerMenu />
+          </div>
         </div>
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-2xl font-semibold text-accent">
           {(profile?.username ?? user.email ?? "?").charAt(0).toUpperCase()}

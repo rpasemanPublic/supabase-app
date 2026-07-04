@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { AuthCard } from "@/app/components/AuthCard";
-import {
-  WeightHeightFields,
-  type WeightHeightValues,
-} from "@/app/components/WeightHeightFields";
+import { WeightHeightFields, type WeightHeightValues } from "@/app/components/WeightHeightFields";
 
 const inputClasses =
   "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
@@ -68,7 +65,7 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthCard title="Sign up">
+    <AuthCard>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           className={inputClasses}
@@ -138,17 +135,12 @@ export default function SignupPage() {
           {submitting ? "Signing up..." : "Sign up"}
         </button>
         {error && (
-          <p
-            role="alert"
-            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
-          >
+          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </p>
         )}
         {message && (
-          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {message}
-          </p>
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>
         )}
         <p className="text-center text-sm text-gray-500">
           Already have an account?{" "}
