@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { predictWeightKg } from "@/utils/predict_weight";
-import { kgToLb, floorToIncrement } from "@/utils/weight_transform";
+import { kgToLb, lbToKg, floorToIncrement } from "@/utils/weight_transform";
 import { LogSetForm } from "@/app/components/LogSetForm";
 import { FinishWorkoutButton } from "@/app/components/FinishWorkoutButton";
 
@@ -14,15 +14,17 @@ const WEIGHT_INCREMENT_KG = 2.5;
 
 // Without generated Database types, postgrest-js can't tell this is a
 // many-to-one embed (recommended_workout_exercises.exercise_id -> exercises.id)
-// and infers `exercises` as an array; .returns() overrides that with the
-// shape it actually returns at runtime -- a single object.
+// and infers `exercises` as an array; .overrideTypes() overrides that with
+// the shape it actually returns at runtime -- a single object.
 type WorkoutQueryResult = {
   id: number;
   name: string;
   created_at: string;
   recommended_workout_exercises: {
     id: number;
+    exercise_id: number;
     exercises: { name: string; exercise_ratio: number } | null;
+    template_exercises: { min_reps: number; max_reps: number } | null;
     recommended_sets: {
       id: number;
       set_number: number;
@@ -41,6 +43,13 @@ type WorkoutQueryResult = {
       }[];
     } | null;
   }[];
+};
+
+type PreviousActualSet = {
+  exercise_id: number;
+  set_number: number;
+  actual_reps: number;
+  actual_weight: number;
 };
 
 export default async function WorkoutPage() {
@@ -70,7 +79,9 @@ export default async function WorkoutPage() {
       created_at,
       recommended_workout_exercises (
         id,
+        exercise_id,
         exercises ( name, exercise_ratio ),
+        template_exercises ( min_reps, max_reps ),
         recommended_sets (
           id,
           set_number,
@@ -87,10 +98,40 @@ export default async function WorkoutPage() {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()
-    .returns<WorkoutQueryResult>();
+    .overrideTypes<WorkoutQueryResult, { merge: false }>();
 
   const bodyWeightKg = profile?.weight_kg ?? null;
   const isImperial = profile?.unit_preference === "imperial";
+
+  // The most recent *other* time the user did each exercise in this
+  // workout, used to progress reps/weight from what they actually did
+  // rather than always predicting off body stats. Keyed by exercise_id
+  // (stable across workout days) rather than recommended_workout_exercise_id,
+  // so progression carries over even when the same exercise appears on a
+  // different day of the program.
+  const exerciseIds = workout
+    ? [...new Set(workout.recommended_workout_exercises.map((e) => e.exercise_id))]
+    : [];
+
+  // .rpc() infers a scalar result without generated Database types, so
+  // .overrideTypes<T[]>() trips its own "can't cast object to array" guard --
+  // asserting the type directly on the destructured data sidesteps that.
+  const { data: previousActualSetsRaw } =
+    exerciseIds.length === 0
+      ? { data: [] as PreviousActualSet[] }
+      : await supabase.rpc("latest_actual_exercise_sets", {
+          p_exercise_ids: exerciseIds,
+          p_exclude_workout_id: workout!.id,
+        });
+  const previousActualSets = previousActualSetsRaw as PreviousActualSet[] | null;
+
+  const latestActualByExerciseId = new Map<number, Map<number, PreviousActualSet>>();
+  for (const row of previousActualSets ?? []) {
+    if (!latestActualByExerciseId.has(row.exercise_id)) {
+      latestActualByExerciseId.set(row.exercise_id, new Map());
+    }
+    latestActualByExerciseId.get(row.exercise_id)!.set(row.set_number, row);
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
@@ -123,39 +164,81 @@ export default async function WorkoutPage() {
                           (a) => a.set_number === set.set_number,
                         );
 
-                        const predictedWeightKg =
-                          bodyWeightKg == null || exercise.exercises == null
-                            ? null
-                            : predictWeightKg({
-                                bodyWeightKg,
-                                exerciseRatio:
-                                  exercise.exercises.exercise_ratio,
-                                trainingExperience:
-                                  profile?.training_experience ?? null,
-                                gender: profile?.gender ?? null,
-                                dateOfBirth: profile?.date_of_birth ?? null,
-                                targetReps: set.recommended_reps,
-                              });
+                        const previousSet = latestActualByExerciseId
+                          .get(exercise.exercise_id)
+                          ?.get(set.set_number);
+
+                        const minReps =
+                          exercise.template_exercises?.min_reps ??
+                          set.recommended_reps;
+                        const maxReps =
+                          exercise.template_exercises?.max_reps ??
+                          set.recommended_reps;
+
+                        // Progress from what the user actually did last time:
+                        // add a rep until they hit the top of the rep range,
+                        // then bump the weight and drop back to the bottom of
+                        // the range. With no prior attempt for this set, fall
+                        // back to the body-stat-based prediction as a
+                        // starting point.
+                        let recommendedReps: number;
+                        let recommendedWeightKg: number | null;
+                        let isProgression: boolean;
+
+                        if (previousSet) {
+                          isProgression = true;
+                          if (previousSet.actual_reps >= maxReps) {
+                            recommendedReps = minReps;
+                            recommendedWeightKg =
+                              previousSet.actual_weight +
+                              (isImperial
+                                ? lbToKg(WEIGHT_INCREMENT_LB)
+                                : WEIGHT_INCREMENT_KG);
+                          } else {
+                            recommendedReps = previousSet.actual_reps + 1;
+                            recommendedWeightKg = previousSet.actual_weight;
+                          }
+                        } else {
+                          isProgression = false;
+                          recommendedReps = set.recommended_reps;
+                          recommendedWeightKg =
+                            bodyWeightKg == null || exercise.exercises == null
+                              ? null
+                              : predictWeightKg({
+                                  bodyWeightKg,
+                                  exerciseRatio:
+                                    exercise.exercises.exercise_ratio,
+                                  trainingExperience:
+                                    profile?.training_experience ?? null,
+                                  gender: profile?.gender ?? null,
+                                  dateOfBirth: profile?.date_of_birth ?? null,
+                                  targetReps: recommendedReps,
+                                });
+                        }
 
                         const displayWeight =
-                          predictedWeightKg == null
+                          recommendedWeightKg == null
                             ? null
-                            : isImperial
-                              ? floorToIncrement(
-                                  kgToLb(predictedWeightKg),
-                                  WEIGHT_INCREMENT_LB,
-                                )
-                              : floorToIncrement(
-                                  predictedWeightKg,
-                                  WEIGHT_INCREMENT_KG,
-                                );
+                            : isProgression
+                              ? isImperial
+                                ? kgToLb(recommendedWeightKg)
+                                : recommendedWeightKg
+                              : isImperial
+                                ? floorToIncrement(
+                                    kgToLb(recommendedWeightKg),
+                                    WEIGHT_INCREMENT_LB,
+                                  )
+                                : floorToIncrement(
+                                    recommendedWeightKg,
+                                    WEIGHT_INCREMENT_KG,
+                                  );
 
                         return (
                           <li key={set.id} className="flex flex-col gap-1">
                             <div className="flex justify-between gap-4">
                               <span>Set {set.set_number}</span>
                               <span className="whitespace-nowrap text-gray-400">
-                                {set.recommended_reps} reps
+                                {recommendedReps} reps
                                 {displayWeight != null
                                   ? isImperial
                                     ? ` @ ${displayWeight.toFixed(0)}lbs`
