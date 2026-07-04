@@ -18,7 +18,9 @@ export default async function SettingsPage() {
 
   const { data: userInfo } = await supabase
     .from("User")
-    .select("username, weight_kg, height_cm, unit_preference, gender")
+    .select(
+      "username, weight_kg, height_cm, unit_preference, gender, date_of_birth, training_experience",
+    )
     .eq("id", user.id)
     .single();
 
@@ -33,6 +35,8 @@ export default async function SettingsPage() {
           initialHeightCm={userInfo?.height_cm ?? null}
           initialUnitPreference={userInfo?.unit_preference ?? "metric"}
           initialGender={userInfo?.gender ?? ""}
+          initialDateOfBirth={userInfo?.date_of_birth ?? ""}
+          initialTrainingExperience={userInfo?.training_experience ?? ""}
         />
         <Link
           href="/"
