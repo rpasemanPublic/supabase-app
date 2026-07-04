@@ -164,6 +164,14 @@ export default async function WorkoutPage() {
                           (a) => a.set_number === set.set_number,
                         );
 
+                        // Sets must be logged in order: don't let the user
+                        // jump ahead and log set 3 before set 2 exists.
+                        const previousSetLogged =
+                          set.set_number === 1 ||
+                          exercise.actual_workout_exercises?.actual_sets.some(
+                            (a) => a.set_number === set.set_number - 1,
+                          ) === true;
+
                         const previousSet = latestActualByExerciseId
                           .get(exercise.exercise_id)
                           ?.get(set.set_number);
@@ -252,6 +260,7 @@ export default async function WorkoutPage() {
                               isImperial={isImperial}
                               initialActualReps={actualSet?.actual_reps ?? null}
                               initialActualWeightKg={actualSet?.actual_weight ?? null}
+                              disabled={!previousSetLogged}
                             />
                           </li>
                         );
