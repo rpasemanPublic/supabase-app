@@ -4,6 +4,26 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { ProgramExplorer } from "@/app/components/ProgramExplorer";
 
+// Without generated Database types, postgrest-js can't tell this is a
+// many-to-one embed (template_exercises.exercise_id -> exercises.id) and
+// infers `exercises` as an array; .overrideTypes() overrides that with the
+// shape it actually returns at runtime -- a single object.
+type ProgramsQueryResult = {
+  id: number;
+  name: string;
+  template_workouts: {
+    id: number;
+    name: string;
+    template_exercises: {
+      id: number;
+      exercises: { name: string } | null;
+      recommended_sets: number;
+      min_reps: number;
+      max_reps: number;
+    }[];
+  }[];
+}[];
+
 export default async function ProgramsPage() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
@@ -27,7 +47,7 @@ export default async function ProgramsPage() {
         name,
         template_exercises (
           id,
-          name,
+          exercises ( name ),
           recommended_sets,
           min_reps,
           max_reps
@@ -35,7 +55,8 @@ export default async function ProgramsPage() {
       )
     `,
     )
-    .order("name");
+    .order("name")
+    .overrideTypes<ProgramsQueryResult, { merge: false }>();
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
