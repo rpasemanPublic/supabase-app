@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { LogoutButton } from "@/app/components/LogoutButton";
 import { HamburgerMenu } from "@/app/components/HamburgerMenu";
 import { SelectProgramDialog } from "@/app/components/SelectProgramDialog";
+import { StartWorkoutButton } from "@/app/components/StartWorkoutButton";
 
 export default async function Page() {
   const cookieStore = await cookies();
@@ -66,9 +67,7 @@ export default async function Page() {
             Resume Your Workout
           </Link>
         ) : (
-          <button className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover">
-            Start Workout
-          </button>
+          <StartWorkoutButton templateProgramId={profile.selected_program_id} />
         )}
         <LogoutButton />
       </div>
