@@ -18,7 +18,7 @@ export default async function SettingsPage() {
 
   const { data: userInfo } = await supabase
     .from("User")
-    .select("username, weight_kg, height_cm, unit_preference")
+    .select("username, weight_kg, height_cm, unit_preference, gender")
     .eq("id", user.id)
     .single();
 
@@ -32,8 +32,12 @@ export default async function SettingsPage() {
           initialWeightKg={userInfo?.weight_kg ?? null}
           initialHeightCm={userInfo?.height_cm ?? null}
           initialUnitPreference={userInfo?.unit_preference ?? "metric"}
+          initialGender={userInfo?.gender ?? ""}
         />
-        <Link href="/" className="text-center text-sm text-accent hover:underline">
+        <Link
+          href="/"
+          className="text-center text-sm text-accent hover:underline"
+        >
           Back
         </Link>
       </div>
