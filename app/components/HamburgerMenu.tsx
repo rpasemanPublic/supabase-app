@@ -33,6 +33,13 @@ export function HamburgerMenu() {
           >
             Programs
           </Link>
+          <Link
+            href="/settings"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            onClick={() => setOpen(false)}
+          >
+            Settings
+          </Link>
         </div>
       )}
     </div>
