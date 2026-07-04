@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { AuthCard } from "@/app/components/AuthCard";
-import { WeightHeightFields, type WeightHeightValues } from "@/app/components/WeightHeightFields";
+import {
+  WeightHeightFields,
+  type WeightHeightValues,
+} from "@/app/components/WeightHeightFields";
 
 const inputClasses =
   "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
@@ -122,9 +125,9 @@ export default function SignupPage() {
             onChange={(e) => setTrainingExperience(e.target.value)}
           >
             <option value="">Not set</option>
-            <option value="novice">Novice</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
+            <option value="novice">Novice (0-1 years)</option>
+            <option value="intermediate">Intermediate (1-5 years)</option>
+            <option value="advanced">Advanced (5+ years)</option>
           </select>
         </div>
         <button
@@ -135,12 +138,17 @@ export default function SignupPage() {
           {submitting ? "Signing up..." : "Sign up"}
         </button>
         {error && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p
+            role="alert"
+            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
             {error}
           </p>
         )}
         {message && (
-          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            {message}
+          </p>
         )}
         <p className="text-center text-sm text-gray-500">
           Already have an account?{" "}

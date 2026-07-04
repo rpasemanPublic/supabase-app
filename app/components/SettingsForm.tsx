@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { WeightHeightFields, type WeightHeightValues } from "@/app/components/WeightHeightFields";
+import {
+  WeightHeightFields,
+  type WeightHeightValues,
+} from "@/app/components/WeightHeightFields";
 
 type Props = {
   userId: string;
@@ -16,7 +19,11 @@ type Props = {
   initialTrainingExperience: string;
 };
 
-const TRAINING_EXPERIENCE_OPTIONS = ["novice", "intermediate", "advanced"];
+const TRAINING_EXPERIENCE_OPTIONS = [
+  { value: "novice", text: "Novice (0-1 years)" },
+  { value: "intermediate", text: "Intermediate (1-5 years)" },
+  { value: "advanced", text: "Advanced (5+ years)" },
+];
 
 const inputClasses =
   "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
@@ -41,11 +48,18 @@ export function SettingsForm({
   const router = useRouter();
   const [username, setUsername] = useState(initialUsername);
   const [dateOfBirth, setDateOfBirth] = useState(initialDateOfBirth);
-  const [trainingExperience, setTrainingExperience] = useState(initialTrainingExperience);
+  const [trainingExperience, setTrainingExperience] = useState(
+    initialTrainingExperience,
+  );
 
-  const initialIsPreset = GENDER_PRESETS.includes(initialGender) || initialGender === "";
-  const [genderPreset, setGenderPreset] = useState(initialIsPreset ? initialGender : "custom");
-  const [customGenderText, setCustomGenderText] = useState(initialIsPreset ? "" : initialGender);
+  const initialIsPreset =
+    GENDER_PRESETS.includes(initialGender) || initialGender === "";
+  const [genderPreset, setGenderPreset] = useState(
+    initialIsPreset ? initialGender : "custom",
+  );
+  const [customGenderText, setCustomGenderText] = useState(
+    initialIsPreset ? "" : initialGender,
+  );
 
   const [weightHeight, setWeightHeight] = useState<WeightHeightValues>({
     weightKg: initialWeightKg,
@@ -56,7 +70,8 @@ export function SettingsForm({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const getGender = (): string => (genderPreset === "custom" ? customGenderText : genderPreset);
+  const getGender = (): string =>
+    genderPreset === "custom" ? customGenderText : genderPreset;
 
   const isDirty =
     username !== initialUsername ||
@@ -166,16 +181,19 @@ export function SettingsForm({
           onChange={(e) => setTrainingExperience(e.target.value)}
         >
           <option value="">Not set</option>
-          {TRAINING_EXPERIENCE_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option.charAt(0).toUpperCase() + option.slice(1)}
+          {TRAINING_EXPERIENCE_OPTIONS.map(({ value, text }) => (
+            <option key={value} value={value}>
+              {text}
             </option>
           ))}
         </select>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
           {error}
         </p>
       )}

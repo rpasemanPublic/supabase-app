@@ -1,19 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { kgToLb, lbToKg, cmToFeetInches, feetInchesToCm } from "@/utils/weight_transform";
+import {
+  kgToLb,
+  lbToKg,
+  cmToFeetInches,
+  feetInchesToCm,
+} from "@/utils/weight_transform";
 
 const inputClasses =
   "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
-function formatWeightText(weightKg: number | null, unitPreference: string): string {
+function formatWeightText(
+  weightKg: number | null,
+  unitPreference: string,
+): string {
   if (weightKg == null) return "";
   const value = unitPreference === "imperial" ? kgToLb(weightKg) : weightKg;
-  return value.toFixed(1);
+  return value.toFixed(0);
 }
 
 function formatHeightCmText(heightCm: number | null): string {
-  return heightCm == null ? "" : heightCm.toFixed(1);
+  return heightCm == null ? "" : heightCm.toFixed(0);
 }
 
 function formatFeetText(heightCm: number | null): string {
@@ -21,7 +29,7 @@ function formatFeetText(heightCm: number | null): string {
 }
 
 function formatInchesText(heightCm: number | null): string {
-  return heightCm == null ? "" : cmToFeetInches(heightCm).inches.toFixed(1);
+  return heightCm == null ? "" : cmToFeetInches(heightCm).inches.toFixed(0);
 }
 
 function parseWeightKg(text: string, unitPreference: string): number | null {
@@ -76,9 +84,15 @@ export function WeightHeightFields({
   const [weightText, setWeightText] = useState(() =>
     formatWeightText(initialWeightKg, initialUnitPreference),
   );
-  const [heightCmText, setHeightCmText] = useState(() => formatHeightCmText(initialHeightCm));
-  const [feetText, setFeetText] = useState(() => formatFeetText(initialHeightCm));
-  const [inchesText, setInchesText] = useState(() => formatInchesText(initialHeightCm));
+  const [heightCmText, setHeightCmText] = useState(() =>
+    formatHeightCmText(initialHeightCm),
+  );
+  const [feetText, setFeetText] = useState(() =>
+    formatFeetText(initialHeightCm),
+  );
+  const [inchesText, setInchesText] = useState(() =>
+    formatInchesText(initialHeightCm),
+  );
 
   const isImperial = unitPreference === "imperial";
 
@@ -91,7 +105,12 @@ export function WeightHeightFields({
   ) => {
     onChange({
       weightKg: parseWeightKg(nextWeightText, nextUnit),
-      heightCm: parseHeightCm(nextHeightCmText, nextFeetText, nextInchesText, nextUnit),
+      heightCm: parseHeightCm(
+        nextHeightCmText,
+        nextFeetText,
+        nextInchesText,
+        nextUnit,
+      ),
       unitPreference: nextUnit,
     });
   };
@@ -121,7 +140,12 @@ export function WeightHeightFields({
   // this is the one point where we deliberately overwrite the text.
   const handleUnitChange = (newUnit: string) => {
     const canonicalWeight = parseWeightKg(weightText, unitPreference);
-    const canonicalHeight = parseHeightCm(heightCmText, feetText, inchesText, unitPreference);
+    const canonicalHeight = parseHeightCm(
+      heightCmText,
+      feetText,
+      inchesText,
+      unitPreference,
+    );
 
     setUnitPreference(newUnit);
     setWeightText(formatWeightText(canonicalWeight, newUnit));
@@ -129,7 +153,11 @@ export function WeightHeightFields({
     setFeetText(formatFeetText(canonicalHeight));
     setInchesText(formatInchesText(canonicalHeight));
 
-    onChange({ weightKg: canonicalWeight, heightCm: canonicalHeight, unitPreference: newUnit });
+    onChange({
+      weightKg: canonicalWeight,
+      heightCm: canonicalHeight,
+      unitPreference: newUnit,
+    });
   };
 
   return (
@@ -141,7 +169,7 @@ export function WeightHeightFields({
         id="weight"
         className={inputClasses}
         type="number"
-        step="0.1"
+        step="1"
         value={weightText}
         onChange={(e) => handleWeightChange(e.target.value)}
       />
@@ -163,7 +191,7 @@ export function WeightHeightFields({
           <input
             className={inputClasses}
             type="number"
-            step="0.1"
+            step="1"
             placeholder="in"
             value={inchesText}
             onChange={(e) => handleInchesChange(e.target.value)}
